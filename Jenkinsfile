@@ -5,13 +5,6 @@ pipeline {
 
     stages {
 
-        stage('Git-Checkout') {
-            steps {
-                git credentialsId: 'github creds', poll: false, url: 'https://github.com/dyo713/simple-java-maven-app.git'
-            }
-        } // end of Git-Checkout stage
-    
-
         stage('Maven-Validation/Compilation') {
             steps {
                 sh "mvn validate" // validate the project is correct and all necessary information is available 
