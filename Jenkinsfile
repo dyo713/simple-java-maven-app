@@ -1,21 +1,19 @@
 pipeline {
     agent {
-        label 'linux'
-    } // end of agent
-
+        docker {
+            image 'maven:3.9.0'
+            args '-v /root/.m2:/root/.m2'
+        }
+    }
     stages {
-
-        stage('Maven-Validation/Compilation') {
+        stage('Build') {
             steps {
-                sh "mvn validate" // validate the project is correct and all necessary information is available 
-                sh "mvn clean compile -DskipTests=true" // compiles the source code of the project
-                sh "mvn test" // testing the compiled code 
+                sh 'mvn -B -DskipTests clean package'
             }
         }
-
-        stage('Maven-Unit-Testing') {
+        stage('Test') {
             steps {
-                sh "mvn test" // testing the compiled code 
+                sh 'mvn test'
             }
             post {
                 always {
@@ -23,44 +21,10 @@ pipeline {
                 }
             }
         }
-
-
-        stage('OWASP-scan') {
-            steps {
-                dependencyCheck additionalArguments: '--scan ./', odcInstallation: 'owasp'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
-
-            }
-        }
-
-        stage('Maven-Build') {
-            steps {
-                sh "mvn clean package -DskipTests=true" // build the maven project and create JAR & WAR file.
-            }
-        } // end of the Maven-Build stage
-
-   
-        stage('Push to Docker Registry') {
-            steps {
-                        
-                // These steps are basically going to create a docker image using the docker file 
-                // that is using the the maven generated jar file to deploy the application.
-
-                sh "docker build -t my-app-java -f docker/Dockerfile ."
-                sh "docker tag my-app-java adityatanwar03/my-app-java:latest"
-                sh "docker push adityatanwar03/my-app-java:latest"
-
-                }
-                
-        }
-
-         stage('Deliver') { // For continous delivery through jenkins 
+        stage('Deliver') {
             steps {
                 sh './jenkins/scripts/deliver.sh'
             }
-         }    
-        
+        }
     }
-
 }
-    
